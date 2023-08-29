@@ -26,4 +26,12 @@
             </message_arguments>
         </filter>
     </resource>
+    <resource path="src/org/eclipse/jface/viewers/AbstractTreeViewer.java" type="org.eclipse.jface.viewers.AbstractTreeViewer">
+        <filter id="336658481">
+            <message_arguments>
+                <message_argument value="org.eclipse.jface.viewers.AbstractTreeViewer"/>
+                <message_argument value="NO_EXPAND"/>
+            </message_arguments>
+        </filter>
+    </resource>
 </component>

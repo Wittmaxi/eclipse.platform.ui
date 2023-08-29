@@ -82,8 +82,17 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 *
 	 * @see #expandToLevel(int)
 	 * @see #collapseToLevel(Object, int)
+	 * @see #setAutoExpandOnSingleChildLevel(int)
 	 */
 	public static final int ALL_LEVELS = -1;
+
+	/**
+	 * Constant indicating that no level of the tree should be expanded or collapsed
+	 *
+	 * @see #setAutoExpandOnSingleChildLevel(int)
+	 * @since 3.31
+	 */
+	public static final int NO_EXPAND = 0;
 
 	/**
 	 * List of registered tree listeners (element type:
@@ -101,8 +110,24 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	private int expandToLevel = 0;
 
 	/**
-	 * Indicates if filters should be checked to determine expandability of
-	 * a tree node.
+	 * How many levels to autoexpand in a path of consecutive single children. 0
+	 * will disable the feature, while a negative value (<code>ALL_LEVELS</code>)
+	 * will expand to infinity
+	 */
+	private int autoExpandOnSingleChildLevel = 0;
+
+	/**
+	 * Listens to expansion events and recursively expands all children which
+	 * themselves only contain one single child.
+	 *
+	 * This listener is added and removed as needed by
+	 * {@link #setAutoExpandOnSingleChildLevel(int)}
+	 */
+	private ITreeViewerListener autoExpandOnSingleChildListener;
+
+	/**
+	 * Indicates if filters should be checked to determine expandability of a tree
+	 * node.
 	 */
 	private boolean isExpandableCheckFilters = false;
 
@@ -138,6 +163,28 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 */
 	protected AbstractTreeViewer() {
 		// do nothing
+	}
+
+	/**
+	 * Will expand the current node and create it's children. If the node only has
+	 * one single child and maxDepth isn't zero, it will recursively expand the
+	 * children until a child has more than a single expandable child or maxDepth is
+	 * reached
+	 *
+	 * @param w        the widget to expand
+	 * @param maxDepth how deep to recursively expand a path of consecutive single
+	 *                 children
+	 * @since 3.31
+	 */
+	protected void expandPathOfSingleChildren(Widget w, int maxDepth) {
+		if (maxDepth == 0) {
+			return;
+		}
+
+		Item[] children = expandAndCreateChildren(w);
+		if (children.length == 1) {
+			expandPathOfSingleChildren(children[0], maxDepth - 1);
+		}
 	}
 
 	/**
@@ -1219,6 +1266,17 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	public int getAutoExpandLevel() {
 		return expandToLevel;
 	}
+
+	/**
+	 * @return <code> NO_EXPAND </code> for disabled, <code> ALL_LEVELS </code> for
+	 *         infinite expansion or any integer value for the currently set level
+	 *         of expansion
+	 * @since 3.31
+	 */
+	public int getAutoExpandOnSingleChildLevel() {
+		return autoExpandOnSingleChildLevel;
+	}
+
 
 	/**
 	 * Returns the SWT child items for the given SWT widget.
@@ -2458,6 +2516,58 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	}
 
 	/**
+	 * Sets the level of auto expand on paths of consecutive single children. <code> NO_EXPAND </code>
+	 * means that such paths are not automatically expanded.
+	 * <p>
+	 * Auto Expansion of paths of consecutive single children is off by default. Turning this behaviour off
+	 * should be done cautiously on trees with lazy-loaded child-nodes.
+	 * <p>
+	 * <p>
+	 * Using <code> ALL_LEVELS </code> as arguments will set to infinite
+	 * auto-expansion of paths of consecutive single children.
+	 * </p>
+	 *
+	 * @param level <code> NO_EXTEND </code> for disabled, <code> ALL_LEVELS </code> for infinite expansion
+	 *              or any integer value to set a level to which paths of consecutive single children are
+	 *              automatically expanded to
+	 * @since 3.31
+	 */
+	public void setAutoExpandOnSingleChildLevel(int level) {
+		autoExpandOnSingleChildLevel = level;
+		if (level == NO_EXPAND) {
+			removeAutoExpandOnSingleChildListener();
+		} else {
+			registerAutoExpandOnSingleChildListener();
+		}
+	}
+
+	private void registerAutoExpandOnSingleChildListener() {
+		autoExpandOnSingleChildListener = new ITreeViewerListener() {
+			@Override
+			public void treeCollapsed(TreeExpansionEvent event) {
+				// Do nothing
+			}
+
+			@Override
+			public void treeExpanded(TreeExpansionEvent e) {
+				Widget item = doFindItem(e.getElement());
+
+				if (expandAndCreateChildren(item).length == 1) {
+					expandPathOfSingleChildren(getChildren(item)[0], getAutoExpandOnSingleChildLevel());
+				}
+
+			}
+		};
+		addTreeListener(autoExpandOnSingleChildListener);
+	}
+
+	private void removeAutoExpandOnSingleChildListener() {
+		if (autoExpandOnSingleChildListener != null) {
+			removeTreeListener(autoExpandOnSingleChildListener);
+		}
+	}
+
+	/**
 	 * Sets the content provider used by this <code>AbstractTreeViewer</code>.
 	 * <p>
 	 * Content providers for abstract tree viewers must implement either
@@ -2574,25 +2684,39 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	}
 
 	/**
+	 * Expands a widget and creates it's children.
+	 *
+	 * @param w Widget to expand
+	 * @return The children of the Widget
+	 * @since 3.31
+	 */
+	private Item[] expandAndCreateChildren(Widget w) {
+		setExpanded((Item) w, true);
+		createChildren(w);
+		return getChildren(w);
+	}
+
+	/**
 	 * Sets whether the node corresponding to the given element or tree path is
 	 * expanded or collapsed.
 	 *
-	 * @param elementOrTreePath
-	 *            the element
-	 * @param expanded
-	 *            <code>true</code> if the node is expanded, and
-	 *            <code>false</code> if collapsed
+	 * @param elementOrTreePath the element
+	 * @param expanded          <code>true</code> if the node is expanded, and
+	 *                          <code>false</code> if collapsed
 	 */
 	public void setExpandedState(Object elementOrTreePath, boolean expanded) {
 		Assert.isNotNull(elementOrTreePath);
 		if (checkBusy())
 			return;
 		Widget item = internalExpand(elementOrTreePath, false);
+
 		if (item instanceof Item) {
-			if (expanded) {
-				createChildren(item);
-			}
 			setExpanded((Item) item, expanded);
+			if (expanded) {
+				if (expandAndCreateChildren(item).length == 1) {
+					expandPathOfSingleChildren(getChildren(item)[0], getAutoExpandOnSingleChildLevel());
+				}
+			}
 		}
 	}
 
