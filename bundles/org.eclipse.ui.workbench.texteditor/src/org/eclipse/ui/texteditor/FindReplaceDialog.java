@@ -208,6 +208,7 @@ class FindReplaceDialog extends Dialog {
 		fReplaceHistory= new ArrayList<>(HISTORY_SIZE);
 
 		readConfiguration();
+		updateButtonState();
 
 		setShellStyle(getShellStyle() ^ SWT.APPLICATION_MODAL | SWT.MODELESS);
 		setBlockOnOpen(false);
@@ -497,10 +498,13 @@ class FindReplaceDialog extends Dialog {
 			public void widgetSelected(SelectionEvent e) {
 				if (findReplacer.isIncrementalSearch() && !findReplacer.isRegExSearchAvailableAndChecked())
 					findReplacer.initIncrementalBaseLocation();
+
+				findReplacer.setForwardSearch(fForwardRadioButton.getSelection());
 			}
 
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
+				// Do nothing
 			}
 		};
 
@@ -516,6 +520,7 @@ class FindReplaceDialog extends Dialog {
 		backwardRadioButton.addSelectionListener(selectionListener);
 		storeButtonWithMnemonicInMap(backwardRadioButton);
 
+		findReplacer.setForwardSearch(true); // search forward by default
 		backwardRadioButton.setSelection(!findReplacer.isForwardSearch());
 		fForwardRadioButton.setSelection(findReplacer.isForwardSearch());
 
@@ -667,6 +672,7 @@ class FindReplaceDialog extends Dialog {
 		SelectionListener selectionListener= new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				setupFindReplacer();
 				storeSettings();
 			}
 
@@ -706,6 +712,7 @@ class FindReplaceDialog extends Dialog {
 				if (findReplacer.isIncrementalSearch() && !findReplacer.isRegexSearch())
 					findReplacer.initIncrementalBaseLocation();
 
+				setupFindReplacer();
 				storeSettings();
 			}
 
@@ -725,8 +732,9 @@ class FindReplaceDialog extends Dialog {
 			public void widgetSelected(SelectionEvent e) {
 				boolean newState= fIsRegExCheckBox.getSelection();
 				fIncrementalCheckBox.setEnabled(!newState);
-				updateButtonState();
+				setupFindReplacer();
 				storeSettings();
+				updateButtonState();
 				setContentAssistsEnablement(newState);
 			}
 		});
@@ -1040,9 +1048,6 @@ class FindReplaceDialog extends Dialog {
 			boolean findString= str != null && !str.isEmpty();
 
 			fWholeWordCheckBox.setEnabled(isWord(str) && !findReplacer.isRegExSearchAvailableAndChecked());
-			// TODO: instead of enabling and disabling this checkbox, correctly set the
-			// state in the FindReplacer - MW
-
 			fFindNextButton.setEnabled(enable && findString);
 			fSelectAllButton.setEnabled(enable && findString && findReplacer.supportsMultiSelection());
 			fReplaceSelectionButton
@@ -1254,6 +1259,14 @@ class FindReplaceDialog extends Dialog {
 			history.clear();
 			Collections.addAll(history, replaceHistory);
 		}
+	}
+
+	private void setupFindReplacer() {
+		findReplacer.setWrapSearch(fWrapCheckBox.getSelection());
+		findReplacer.setCaseSensitiveSearch(fCaseCheckBox.getSelection());
+		findReplacer.setWholeWordSearchSetting(fWholeWordCheckBox.getSelection());
+		findReplacer.setIncrementalSearch(fIncrementalCheckBox.getSelection());
+		findReplacer.setRegexSearch(fIsRegExCheckBox.getSelection());
 	}
 
 	/**
