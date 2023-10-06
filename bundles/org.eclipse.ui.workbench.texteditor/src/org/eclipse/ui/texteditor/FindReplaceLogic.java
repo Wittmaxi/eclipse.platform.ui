@@ -38,7 +38,7 @@ import org.eclipse.ui.internal.texteditor.NLSUtility;
 /**
  * @since 3.17
  */
-class FindReplaceLogic {
+class FindReplaceLogic implements IFindReplaceLogic {
 	private FindAndReplaceMessageStatus status = new FindAndReplaceMessageStatus();
 	private IFindReplaceTarget target;
 	private IRegion oldScope;
@@ -78,42 +78,52 @@ class FindReplaceLogic {
 	 *
 	 * @return boolean whether the search is global
 	 */
+	@Override
 	public boolean isGlobalSearch() {
 		return searchEntireDocument;
 	}
 
+	@Override
 	public void setGlobalSearch(boolean globalSearch) {
 		searchEntireDocument = globalSearch;
 	}
 
+	@Override
 	public boolean needsInitialFindBeforeReplace() {
 		return nextReplactionOperationNeedsFindOperationFirst;
 	}
 
+	@Override
 	public void setNeedsInitialFindBeforeReplace(boolean needsInitialFindBeforeReplace) {
 		nextReplactionOperationNeedsFindOperationFirst = needsInitialFindBeforeReplace;
 	}
 
+	@Override
 	public boolean isCaseSensitiveSearch() {
 		return respectCaseInSearch;
 	}
 
+	@Override
 	public void setCaseSensitiveSearch(boolean caseSensitiveSearch) {
 		respectCaseInSearch = caseSensitiveSearch;
 	}
 
+	@Override
 	public boolean isWrapSearch() {
 		return wrapSearch;
 	}
 
+	@Override
 	public void setWrapSearch(boolean wrapSearch) {
 		this.wrapSearch = wrapSearch;
 	}
 
+	@Override
 	public boolean isWholeWordSearchSetting() {
 		return searchInWholeWords;
 	}
 
+	@Override
 	public void setWholeWordSearchSetting(boolean wholeWordSearch) {
 		searchInWholeWords = wholeWordSearch;
 	}
@@ -127,16 +137,18 @@ class FindReplaceLogic {
 	 *
 	 * @return FindAndReplaceMessageStatus
 	 */
+	@Override
 	public FindAndReplaceMessageStatus getStatus() {
-		return status.clone();
+		return status;
 	}
 
 	/**
 	 * Call before running an operation of FindReplaceLogic. Resets the internal
 	 * status.
 	 */
+	@Override
 	public void resetStatus() {
-		status.resetStatus();
+		status = new FindAndReplaceMessageStatus();
 	}
 
 	/**
@@ -151,39 +163,48 @@ class FindReplaceLogic {
 		return isWholeWordSearchSetting() && !isRegExSearchAvailableAndChecked();
 	}
 
+	@Override
 	public boolean isForwardSearch() {
 		return searchFoward;
 	}
 
+	@Override
 	public void setForwardSearch(boolean forwardSearch) {
 		searchFoward = forwardSearch;
 	}
 
+	@Override
 	public boolean isTargetSupportingRegEx() {
 		return fIsTargetSupportingRegEx;
 	}
 
+	@Override
 	public void setIsTargetSupportingRegEx(boolean isTargetSupportingRegEx) {
 		fIsTargetSupportingRegEx = isTargetSupportingRegEx;
 	}
 
+	@Override
 	public boolean isIncrementalSearch() {
 		return isSearchAsYouType;
 	}
 
+	@Override
 	public void setIncrementalSearch(boolean incrementalSearch) {
 		this.isSearchAsYouType = incrementalSearch;
 	}
 
+	@Override
 	public boolean isRegexSearch() {
 		return useRegExSearch;
 	}
 
+	@Override
 	public void setRegexSearch(boolean regexSearch) {
 		useRegExSearch = regexSearch;
 	}
 
 
+	@Override
 	public boolean isRegExSearchAvailableAndChecked() {
 		return isRegexSearch() && fIsTargetSupportingRegEx;
 	}
@@ -194,6 +215,7 @@ class FindReplaceLogic {
 	 *
 	 * @since 2.0
 	 */
+	@Override
 	public void initIncrementalBaseLocation() {
 		if (target != null && isIncrementalSearch() && !isRegExSearchAvailableAndChecked()) {
 			incrementalBaseLocation = target.getSelection();
@@ -209,6 +231,7 @@ class FindReplaceLogic {
 	 * @param selectedLines <code>true</code> if selected lines should be used
 	 * @since 2.0
 	 */
+	@Override
 	public void useSelectedLines(boolean selectedLines) {
 		if (isIncrementalSearch() && !isRegExSearchAvailableAndChecked())
 			initIncrementalBaseLocation();
@@ -270,6 +293,7 @@ class FindReplaceLogic {
 	 * @param replaceString The string that will replace the findString
 	 * @param display       the UI's Display
 	 */
+	@Override
 	public void performReplaceAll(String findString, String replaceString, Display display) {
 
 		int replaceCount = 0;
@@ -318,6 +342,7 @@ class FindReplaceLogic {
 	 * @param findString The String to find and select
 	 * @param display    The UI's Display The UI's Display
 	 */
+	@Override
 	public void performSelectAll(String findString, Display display) {
 
 		int selectCount = 0;
@@ -367,6 +392,7 @@ class FindReplaceLogic {
 	 *         otherwise
 	 * @since 2.1
 	 */
+	@Override
 	public boolean validateTargetState() {
 
 		if (target instanceof IFindReplaceTargetExtension2) {
@@ -386,6 +412,7 @@ class FindReplaceLogic {
 	 *
 	 * @return <code>true</code> if the operation was successful
 	 */
+	@Override
 	public boolean performReplaceSelection(String replaceString) {
 
 		if (!validateTargetState())
@@ -416,6 +443,7 @@ class FindReplaceLogic {
 	 *
 	 * @since 3.7
 	 */
+	@Override
 	public boolean performSearch(String searchString) {
 		return performSearch(isIncrementalSearch() && !isRegExSearchAvailableAndChecked(), searchString);
 	}
@@ -429,6 +457,7 @@ class FindReplaceLogic {
 	 * @return Whether the string was found in the target
 	 * @since 3.0
 	 */
+	@Override
 	public boolean performSearch(boolean mustInitIncrementalBaseLocation, String findString) {
 
 		if (mustInitIncrementalBaseLocation)
@@ -463,6 +492,7 @@ class FindReplaceLogic {
 	 *
 	 * @since 3.0
 	 */
+	@Override
 	public int replaceAll(String findString, String replaceString, boolean caseSensitive, boolean wholeWord,
 			boolean regExSearch) {
 
@@ -502,6 +532,7 @@ class FindReplaceLogic {
 	 * @param regExSearch   Should the findString be interpreted as RegEx?
 	 * @return The amount of selected Elements
 	 */
+	@Override
 	public int selectAll(String findString, boolean caseSensitive, boolean wholeWord, boolean regExSearch) {
 
 		int selectCount = 0;
@@ -538,13 +569,14 @@ class FindReplaceLogic {
 	 *         <code>-1</code> if nothing found
 	 * @since 3.0
 	 */
+	@Override
 	public int findIndex(String findString, int startPosition) {
 
 		if (isForwardSearch()) {
 			int index = findAndSelect(startPosition, findString);
 			if (index == -1) {
 
-				status.setWarning(true);
+				status = status.setWarning(true);
 
 				if (isWrapSearch()) {
 					statusMessage(EditorMessages.FindReplace_Status_wrapped_label);
@@ -559,7 +591,7 @@ class FindReplaceLogic {
 				: findAndSelect(startPosition - 1, findString);
 		if (index == -1) {
 
-			status.setWarning(true);
+			status = status.setWarning(true);
 
 			if (isWrapSearch()) {
 				statusMessage(EditorMessages.FindReplace_Status_wrapped_label);
@@ -580,6 +612,7 @@ class FindReplaceLogic {
 	 *         been found
 	 * @since 3.0
 	 */
+	@Override
 	public int findAndSelect(int offset, String findString) {
 		if (target instanceof IFindReplaceTargetExtension3)
 			return ((IFindReplaceTargetExtension3) target).findAndSelect(offset, findString, isForwardSearch(),
@@ -601,6 +634,7 @@ class FindReplaceLogic {
 	 * @return the selection after replacing, i.e. the inserted text
 	 * @since 3.0
 	 */
+	@Override
 	public Point replaceSelection(String replaceString, boolean regExReplace) {
 		if (target instanceof IFindReplaceTargetExtension3)
 			((IFindReplaceTargetExtension3) target).replaceSelection(replaceString, regExReplace);
@@ -621,6 +655,7 @@ class FindReplaceLogic {
 	 *
 	 * @since 3.0
 	 */
+	@Override
 	public boolean findNext(String findString, boolean forwardSearch) {
 
 		if (target == null)
@@ -652,8 +687,16 @@ class FindReplaceLogic {
 		return true;
 	}
 
-	public boolean performFindFirstThenReplaceInASecondStep(String findString, String replaceString) {
-		if (nextReplactionOperationNeedsFindOperationFirst) {
+	/**
+	 * Replaces the selection and jumps to the next occurrence of findString
+	 * instantly. If another operation annotated that we need to select the
+	 * occurrence of findString first before replacing, this method does so. (eg,
+	 * after replacing once, we automatically perform <code> findAndSelect </code>
+	 * once before being able to replace again).
+	 */
+	@Override
+	public boolean performReplaceAndFind(String findString, String replaceString) {
+		if (getCurrentSelection() != findString) {
 			performSearch(findString);
 		}
 		if (performReplaceSelection(replaceString)) {
@@ -663,26 +706,28 @@ class FindReplaceLogic {
 		return false;
 	}
 
+	@Override
 	public boolean performSelectAndReplace(String findString, String replaceString) {
 		if (nextReplactionOperationNeedsFindOperationFirst)
 			performSearch(findString);
 		return performReplaceSelection(replaceString);
 	}
 
-	public void updateTarget(IFindReplaceTarget newRarget, boolean canEditTarget) {
+	@Override
+	public void updateTarget(IFindReplaceTarget newTarget, boolean canEditTarget) {
 		this.isTargetEditable = canEditTarget;
 		nextReplactionOperationNeedsFindOperationFirst = true;
 
-		if (this.target != newRarget) {
-			if (newRarget != null && newRarget instanceof IFindReplaceTargetExtension)
-				((IFindReplaceTargetExtension) newRarget).endSession();
+		if (this.target != newTarget) {
+			if (newTarget != null && newTarget instanceof IFindReplaceTargetExtension)
+				((IFindReplaceTargetExtension) newTarget).endSession();
 
-			this.target = newRarget;
-			if (newRarget != null)
-				fIsTargetSupportingRegEx = newRarget instanceof IFindReplaceTargetExtension3;
+			this.target = newTarget;
+			if (newTarget != null)
+				fIsTargetSupportingRegEx = newTarget instanceof IFindReplaceTargetExtension3;
 
-			if (newRarget instanceof IFindReplaceTargetExtension) {
-				((IFindReplaceTargetExtension) newRarget).beginSession();
+			if (newTarget instanceof IFindReplaceTargetExtension) {
+				((IFindReplaceTargetExtension) newTarget).beginSession();
 
 				setGlobalSearch(true);
 			}
@@ -691,6 +736,7 @@ class FindReplaceLogic {
 		initIncrementalBaseLocation();
 	}
 
+	@Override
 	public void endSession() {
 		if (target != null && target instanceof IFindReplaceTargetExtension)
 			((IFindReplaceTargetExtension) target).endSession();
@@ -699,6 +745,7 @@ class FindReplaceLogic {
 	}
 
 
+	@Override
 	public void deactivateScope() {
 		if (target != null && (target instanceof IFindReplaceTargetExtension))
 			((IFindReplaceTargetExtension) target).setScope(null);
@@ -706,6 +753,7 @@ class FindReplaceLogic {
 		oldScope = null;
 	}
 
+	@Override
 	public String getCurrentSelection() {
 		if (target == null) {
 			return null;
@@ -719,6 +767,7 @@ class FindReplaceLogic {
 	 *
 	 * @return <code>true</code> if target is editable
 	 */
+	@Override
 	public boolean isEditable() {
 		boolean isEditable = (target == null ? false : target.isEditable());
 		return isTargetEditable && isEditable;
@@ -727,6 +776,7 @@ class FindReplaceLogic {
 	/**
 	 * @return Whether the target supports multiple selections
 	 */
+	@Override
 	public boolean supportsMultiSelection() {
 		return target instanceof IFindReplaceTargetExtension4;
 	}
@@ -734,6 +784,7 @@ class FindReplaceLogic {
 	/**
 	 * @return Whether the target is available
 	 */
+	@Override
 	public boolean isTargetAvailable() {
 		return target != null;
 	}
@@ -746,8 +797,7 @@ class FindReplaceLogic {
 	 * @param editorMessage the message to display in the editor's status line
 	 */
 	private void statusMessage(boolean error, String dialogMessage, String editorMessage) {
-		status.setError(error);
-		status.setMessage(dialogMessage);
+		status = status.setError(error).setMessage(dialogMessage);
 
 		IEditorStatusLine statusLine = getStatusLineManager();
 		if (statusLine != null)
@@ -774,11 +824,19 @@ class FindReplaceLogic {
 
 	/**
 	 * Updates the search result after the Text was Modified. Used in combination
-	 * with <code>setIncrementalSearch(true)</code>
+	 * with <code>setIncrementalSearch(true)</code>. This method specifically allows
+	 * for "search-as-you-type"
+	 *
+	 * "Search-as-you-type" is not compatible with RegEx-search. This will
+	 * initialize the base-location for search (if not initialized already) but will
+	 * not update it, meaning that incrementally searching the same string twice in
+	 * a row will always yield the same result, unless the Base location was
+	 * modified (eg., by performing "find next")
 	 *
 	 * @param searchString the String that is to be searched
 	 */
-	public void updateSearchResultAfterTextWasModified(String searchString) {
+	@Override
+	public void performIncrementalSearch(String searchString) {
 		if (isIncrementalSearch() && !isRegExSearchAvailableAndChecked()) {
 			if (searchString.equals("") && target != null) { //$NON-NLS-1$
 				// empty selection at base location

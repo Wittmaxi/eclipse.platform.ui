@@ -74,7 +74,7 @@ import org.eclipse.ui.internal.texteditor.SWTUtil;
 class FindReplaceDialog extends Dialog {
 
 	private static final int CLOSE_BUTTON_ID = 101;
-	private FindReplaceLogic findReplacer;
+	private IFindReplaceLogic findReplacer;
 
 	/**
 	 * Updates the find replace dialog on activation changes.
@@ -130,7 +130,7 @@ class FindReplaceDialog extends Dialog {
 				return;
 			}
 
-			findReplacer.updateSearchResultAfterTextWasModified(getFindString());
+			findReplacer.performIncrementalSearch(getFindString());
 
 			updateButtonState(!findReplacer.isIncrementalSearch());
 		}
@@ -305,7 +305,7 @@ class FindReplaceDialog extends Dialog {
 		fReplaceFindButton= makeButton(panel, EditorMessages.FindReplace_ReplaceFindButton_label, 103, false, new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (findReplacer.performFindFirstThenReplaceInASecondStep(getFindString(), getReplaceString())) {
+				if (findReplacer.performReplaceAndFind(getFindString(), getReplaceString())) {
 					writeSelection();
 				}
 				updateButtonState();

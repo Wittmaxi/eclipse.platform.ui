@@ -15,53 +15,58 @@
 package org.eclipse.ui.texteditor;
 
 /**
- * Use by FindAndReplace to signal warnings, errors and messages to
- * FindAndReplaceDialog and FindAndReplaceOverlay.
+ * Use by FindReplaceLogic to signal warnings, errors and messages
  *
  * @since 3.17
  */
-class FindAndReplaceMessageStatus {
+final class FindAndReplaceMessageStatus {
 	private boolean error;
 	private boolean warning;
 	private String message;
 
-	public void resetStatus() {
-		error = false;
-		warning = false;
-		setMessage(""); //$NON-NLS-1$
+	public FindAndReplaceMessageStatus() {
+		this("", false, false); //$NON-NLS-1$
+	}
+
+	/**
+	 * Constructs a status object that can be used to communicate with an Interface
+	 * that uses FindReplaceLogic
+	 *
+	 * @param message A user-readable message that can be displayed to inform the
+	 *                user about the state of his Find/Replace operation
+	 * @param error   Signals an Error. Can be expressed by an acoustic Signal and
+	 *                using an error-font-color for the Message, for example.
+	 * @param warning Signals a Warning. Can be expressed by an acoustic signal, for
+	 *                example.
+	 */
+	public FindAndReplaceMessageStatus(String message, boolean error, boolean warning) {
+		this.message = message;
+		this.error = error;
+		this.warning = warning;
 	}
 
 	public String getMessage() {
 		return message;
 	}
 
-	public void setMessage(String message) {
-		this.message = message;
-	}
-
 	public boolean isError() {
 		return error;
-	}
-
-	public void setError(boolean error) {
-		this.error = error;
-	}
-
-	public void setWarning(boolean warning) {
-		this.warning = warning;
 	}
 
 	public boolean isWarning() {
 		return warning;
 	}
 
-	@Override
-	public FindAndReplaceMessageStatus clone() {
-		FindAndReplaceMessageStatus ret = new FindAndReplaceMessageStatus();
-		ret.setMessage(message);
-		ret.setError(isError());
-		ret.setWarning(isWarning());
-		return ret;
+	public FindAndReplaceMessageStatus setWarning(boolean newWarning) {
+		return new FindAndReplaceMessageStatus(this.message, this.error, newWarning);
+	}
+
+	public FindAndReplaceMessageStatus setError(boolean newError) {
+		return new FindAndReplaceMessageStatus(this.message, newError, this.warning);
+	}
+
+	public FindAndReplaceMessageStatus setMessage(String newMessage) {
+		return new FindAndReplaceMessageStatus(newMessage, this.error, this.warning);
 	}
 
 }
