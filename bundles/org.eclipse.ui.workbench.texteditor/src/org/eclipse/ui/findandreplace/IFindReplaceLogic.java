@@ -1,6 +1,5 @@
-package org.eclipse.ui.texteditor;
+package org.eclipse.ui.findandreplace;
 
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 
 import org.eclipse.jface.text.IFindReplaceTarget;
@@ -42,7 +41,7 @@ interface IFindReplaceLogic {
 	 *
 	 * @return FindAndReplaceMessageStatus
 	 */
-	FindAndReplaceMessageStatus getStatus();
+	FindReplaceLogicMessageStatus getStatus();
 
 	/**
 	 * Call before running an operation of FindReplaceLogic. Resets the internal
@@ -90,7 +89,11 @@ interface IFindReplaceLogic {
 	 *
 	 * @param findString    The string that will be replaced
 	 * @param replaceString The string that will replace the findString
-	 * @param display       the UI's Display
+	 * @param display       the display on which the busy feedback should be
+	 *                      displayed. If the display is null, the Display for the
+	 *                      current thread will be used. If there is no Display for
+	 *                      the current thread,the runnable code will be executed
+	 *                      and no busy feedback will be displayed.y
 	 */
 	void performReplaceAll(String findString, String replaceString, Display display);
 
@@ -112,15 +115,6 @@ interface IFindReplaceLogic {
 	boolean validateTargetState();
 
 	/**
-	 * Replaces the current selection of the target with the user's replace string.
-	 *
-	 * @param replaceString the String to replace the selection with
-	 *
-	 * @return <code>true</code> if the operation was successful
-	 */
-	boolean performReplaceSelection(String replaceString);
-
-	/**
 	 * Locates the user's findString in the target
 	 *
 	 * @param searchString the String to search for
@@ -140,23 +134,6 @@ interface IFindReplaceLogic {
 	 * @since 3.0
 	 */
 	boolean performSearch(boolean mustInitIncrementalBaseLocation, String findString);
-
-	/**
-	 * Replaces all occurrences of the user's findString with the replace string.
-	 * Returns the number of replacements that occur.
-	 *
-	 * @param findString    the string to search for
-	 * @param replaceString the replacement string
-	 * @param caseSensitive should the search be case sensitive
-	 * @param wholeWord     does the search string represent a complete word
-	 * @param regExSearch   if <code>true</code> findString represents a regular
-	 *                      expression
-	 * @return the number of occurrences
-	 *
-	 * @since 3.0
-	 */
-	int replaceAll(String findString, String replaceString, boolean caseSensitive, boolean wholeWord,
-			boolean regExSearch);
 
 	/**
 	 * @param findString    the String to select as part of the search
@@ -191,34 +168,6 @@ interface IFindReplaceLogic {
 	 * @since 3.0
 	 */
 	int findAndSelect(int offset, String findString);
-
-	/**
-	 * Replaces the selection with <code>replaceString</code>. If
-	 * <code>regExReplace</code> is <code>true</code>, <code>replaceString</code> is
-	 * a regex replace pattern which will get expanded if the underlying target
-	 * supports it. Returns the region of the inserted text; note that the returned
-	 * selection covers the expanded pattern in case of regex replace.
-	 *
-	 * @param replaceString the replace string (or a regex pattern)
-	 * @param regExReplace  <code>true</code> if <code>replaceString</code> is a
-	 *                      pattern
-	 * @return the selection after replacing, i.e. the inserted text
-	 * @since 3.0
-	 */
-	Point replaceSelection(String replaceString, boolean regExReplace);
-
-	/**
-	 * Returns whether the specified search string can be found using the given
-	 * options.
-	 *
-	 * @param findString    the string to search for
-	 * @param forwardSearch the direction of the search
-	 * @return <code>true</code> if the search string can be found using the given
-	 *         options
-	 *
-	 * @since 3.0
-	 */
-	boolean findNext(String findString, boolean forwardSearch);
 
 	/**
 	 * Replaces the selection and jumps to the next occurrence of findString
@@ -272,5 +221,10 @@ interface IFindReplaceLogic {
 	 * @param searchString the String that is to be searched
 	 */
 	void performIncrementalSearch(String searchString);
+
+	/*
+	 * @return the Target that FindReplaceLogic operates on
+	 */
+	IFindReplaceTarget getTarget();
 
 }

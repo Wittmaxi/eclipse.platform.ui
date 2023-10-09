@@ -12,19 +12,19 @@
  *     Vector Informatik GmbH - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.ui.texteditor;
+package org.eclipse.ui.findandreplace;
 
 /**
  * Use by FindReplaceLogic to signal warnings, errors and messages
  *
  * @since 3.17
  */
-final class FindAndReplaceMessageStatus {
+public final class FindReplaceLogicMessageStatus {
 	private boolean error;
 	private boolean warning;
 	private String message;
 
-	public FindAndReplaceMessageStatus() {
+	public FindReplaceLogicMessageStatus() {
 		this("", false, false); //$NON-NLS-1$
 	}
 
@@ -39,7 +39,7 @@ final class FindAndReplaceMessageStatus {
 	 * @param warning Signals a Warning. Can be expressed by an acoustic signal, for
 	 *                example.
 	 */
-	public FindAndReplaceMessageStatus(String message, boolean error, boolean warning) {
+	public FindReplaceLogicMessageStatus(String message, boolean error, boolean warning) {
 		this.message = message;
 		this.error = error;
 		this.warning = warning;
@@ -57,16 +57,16 @@ final class FindAndReplaceMessageStatus {
 		return warning;
 	}
 
-	public FindAndReplaceMessageStatus setWarning(boolean newWarning) {
-		return new FindAndReplaceMessageStatus(this.message, this.error, newWarning);
+	public FindReplaceLogicMessageStatus setWarning(boolean newWarning) {
+		return new FindReplaceLogicMessageStatus(this.message, this.error, newWarning);
 	}
 
-	public FindAndReplaceMessageStatus setError(boolean newError) {
-		return new FindAndReplaceMessageStatus(this.message, newError, this.warning);
+	public FindReplaceLogicMessageStatus setError(boolean newError) {
+		return new FindReplaceLogicMessageStatus(this.message, newError, this.warning);
 	}
 
-	public FindAndReplaceMessageStatus setMessage(String newMessage) {
-		return new FindAndReplaceMessageStatus(newMessage, this.error, this.warning);
+	public FindReplaceLogicMessageStatus setMessage(String newMessage) {
+		return new FindReplaceLogicMessageStatus(newMessage, this.error, this.warning);
 	}
 
 }

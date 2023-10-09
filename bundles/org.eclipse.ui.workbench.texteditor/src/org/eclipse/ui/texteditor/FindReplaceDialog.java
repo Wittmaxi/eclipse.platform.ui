@@ -64,6 +64,9 @@ import org.eclipse.jface.text.TextUtilities;
 
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.fieldassist.ContentAssistCommandAdapter;
+import org.eclipse.ui.findandreplace.FindReplaceLogic;
+import org.eclipse.ui.findandreplace.FindReplaceLogicMessageStatus;
+import org.eclipse.ui.findandreplace.IFindReplaceLogic;
 import org.eclipse.ui.internal.texteditor.SWTUtil;
 
 
@@ -1315,7 +1318,7 @@ class FindReplaceDialog extends Dialog {
 	}
 
 	private void evaluateFindReplacerStatus() {
-		FindAndReplaceMessageStatus status = findReplacer.getStatus();
+		FindReplaceLogicMessageStatus status = findReplacer.getStatus();
 
 		String dialogMessage = status.getMessage();
 		boolean error = status.isError();

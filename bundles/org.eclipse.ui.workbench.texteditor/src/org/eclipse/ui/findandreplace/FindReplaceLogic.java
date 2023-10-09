@@ -12,7 +12,7 @@
  *     Vector Informatik GmbH - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.ui.texteditor;
+package org.eclipse.ui.findandreplace;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +35,14 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.texteditor.NLSUtility;
 
+import org.eclipse.ui.texteditor.IEditorStatusLine;
+import org.eclipse.ui.texteditor.IFindReplaceTargetExtension2;
+
 /**
  * @since 3.17
  */
 class FindReplaceLogic implements IFindReplaceLogic {
-	private FindAndReplaceMessageStatus status = new FindAndReplaceMessageStatus();
+	private FindReplaceLogicMessageStatus status = new FindReplaceLogicMessageStatus();
 	private IFindReplaceTarget target;
 	private IRegion oldScope;
 	private Point incrementalBaseLocation;
@@ -138,7 +141,7 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 * @return FindAndReplaceMessageStatus
 	 */
 	@Override
-	public FindAndReplaceMessageStatus getStatus() {
+	public FindReplaceLogicMessageStatus getStatus() {
 		return status;
 	}
 
@@ -148,7 +151,7 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 */
 	@Override
 	public void resetStatus() {
-		status = new FindAndReplaceMessageStatus();
+		status = new FindReplaceLogicMessageStatus();
 	}
 
 	/**
@@ -289,6 +292,10 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 * Replaces all occurrences of the user's findString with the replace string.
 	 * Indicate to the user the number of replacements that occur.
 	 *
+	 * <b> status: </b> {@see #getStatus() } message: String telling a user how many
+	 * replacements were performed or that the find-String could not be matched at
+	 * all
+	 *
 	 * @param findString    The string that will be replaced
 	 * @param replaceString The string that will replace the findString
 	 * @param display       the UI's Display
@@ -412,8 +419,7 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 *
 	 * @return <code>true</code> if the operation was successful
 	 */
-	@Override
-	public boolean performReplaceSelection(String replaceString) {
+	private boolean replaceSelection(String replaceString) {
 
 		if (!validateTargetState())
 			return false;
@@ -492,8 +498,7 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 *
 	 * @since 3.0
 	 */
-	@Override
-	public int replaceAll(String findString, String replaceString, boolean caseSensitive, boolean wholeWord,
+	private int replaceAll(String findString, String replaceString, boolean caseSensitive, boolean wholeWord,
 			boolean regExSearch) {
 
 		int replaceCount = 0;
@@ -634,8 +639,7 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 * @return the selection after replacing, i.e. the inserted text
 	 * @since 3.0
 	 */
-	@Override
-	public Point replaceSelection(String replaceString, boolean regExReplace) {
+	private Point replaceSelection(String replaceString, boolean regExReplace) {
 		if (target instanceof IFindReplaceTargetExtension3)
 			((IFindReplaceTargetExtension3) target).replaceSelection(replaceString, regExReplace);
 		else
@@ -655,8 +659,7 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 *
 	 * @since 3.0
 	 */
-	@Override
-	public boolean findNext(String findString, boolean forwardSearch) {
+	private boolean findNext(String findString, boolean forwardSearch) {
 
 		if (target == null)
 			return false;
@@ -696,10 +699,7 @@ class FindReplaceLogic implements IFindReplaceLogic {
 	 */
 	@Override
 	public boolean performReplaceAndFind(String findString, String replaceString) {
-		if (getCurrentSelection() != findString) {
-			performSearch(findString);
-		}
-		if (performReplaceSelection(replaceString)) {
+		if (performSelectAndReplace(findString, replaceString)) {
 			performSearch(findString);
 			return true;
 		}
@@ -708,9 +708,11 @@ class FindReplaceLogic implements IFindReplaceLogic {
 
 	@Override
 	public boolean performSelectAndReplace(String findString, String replaceString) {
-		if (nextReplactionOperationNeedsFindOperationFirst)
+		boolean needToSelectFirst = !getCurrentSelection().equals(findString);
+		if (needToSelectFirst) {
 			performSearch(findString);
-		return performReplaceSelection(replaceString);
+		}
+		return replaceSelection(replaceString);
 	}
 
 	@Override
@@ -852,6 +854,11 @@ class FindReplaceLogic implements IFindReplaceLogic {
 				performSearch(false, searchString);
 			}
 		}
+	}
+
+	@Override
+	public IFindReplaceTarget getTarget() {
+		return target;
 	}
 
 }
