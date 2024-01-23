@@ -21,6 +21,8 @@ import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 
 import org.eclipse.jface.dialogs.IPageChangedListener;
 import org.eclipse.jface.dialogs.PageChangedEvent;
@@ -53,6 +55,11 @@ import org.eclipse.ui.IWorkbenchWindow;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class FindReplaceAction extends ResourceAction implements IUpdate {
+
+	private static boolean shouldShowModernOverlay() {
+		IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode("org.eclipse.ui.editors"); //$NON-NLS-1$
+		return preferences.getBoolean("usefindreplaceoverlay", true); //$NON-NLS-1$
+	}
 
 	/**
 	 * Represents the "global" find/replace dialog. It tracks the active
@@ -219,7 +226,6 @@ public class FindReplaceAction extends ResourceAction implements IUpdate {
 
 	}
 
-
 	/**
 	 * Listener for disabling the dialog on shell close.
 	 * <p>
@@ -245,6 +251,8 @@ public class FindReplaceAction extends ResourceAction implements IUpdate {
 	 * @since 3.3
 	 */
 	private Shell fShell;
+
+	private FindReplaceOverlay overlay;
 
 	/**
 	 * Creates a new find/replace action for the given workbench part.
@@ -316,9 +324,22 @@ public class FindReplaceAction extends ResourceAction implements IUpdate {
 
 	@Override
 	public void run() {
-		if (fTarget == null)
-			return;
+		// only show Overlay on Text-Editors, don't show it on Consoles
+		if (shouldShowModernOverlay() && fWorkbenchPart instanceof StatusTextEditor) {
+			showModernOverlay();
+		} else {
+			if (fTarget == null) {
+				return;
+			}
 
+			showClassicDialog();
+		}
+	}
+
+	/**
+	 * @since 3.17
+	 */
+	private void showClassicDialog() {
 		final FindReplaceDialog dialog;
 		final boolean isEditable;
 
@@ -350,6 +371,31 @@ public class FindReplaceAction extends ResourceAction implements IUpdate {
 
 		dialog.updateTarget(fTarget, isEditable, true);
 		dialog.open();
+	}
+
+	private void showModernOverlay() {
+		if (overlay == null) {
+			Shell shellToUse;
+			if (fShell == null) {
+				shellToUse = fWorkbenchPart.getSite().getShell();
+			} else {
+				shellToUse = fShell;
+			}
+			overlay = new FindReplaceOverlay(shellToUse, fWorkbenchPart, fTarget, this);
+		}
+		overlay.create();
+		overlay.open();
+	}
+
+	/**
+	 * Closes the "modern" overlay. Typically called by the overlay itself.
+	 *
+	 * @since 3.17
+	 */
+	void closeModernOverlay() { // package-private
+		if (overlay != null) {
+			overlay.close();
+		}
 	}
 
 	@Override
