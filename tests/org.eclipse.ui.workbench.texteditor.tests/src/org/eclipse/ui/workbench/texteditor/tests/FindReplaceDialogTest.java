@@ -54,7 +54,6 @@ public class FindReplaceDialogTest {
 
 	@Rule
 	public TestName testName= new TestName();
-
 	private TextViewer fTextViewer;
 
 	private static void runEventQueue() {

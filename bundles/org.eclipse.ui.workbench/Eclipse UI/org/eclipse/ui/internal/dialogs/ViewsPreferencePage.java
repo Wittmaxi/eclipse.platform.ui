@@ -98,6 +98,7 @@ public class ViewsPreferencePage extends PreferencePage implements IWorkbenchPre
 	private ITheme currentTheme;
 	private String defaultTheme;
 	private Button useRoundTabs;
+	private Button useFindReplaceOverlay;
 	private Button enableMru;
 	private Button useColoredLabels;
 
@@ -185,6 +186,7 @@ public class ViewsPreferencePage extends PreferencePage implements IWorkbenchPre
 	}
 
 	private void createThemeIndependentComposits(Composite comp) {
+		createUseFindReplaceOverlay(comp);
 		createUseRoundTabs(comp);
 		createColoredLabelsPref(comp);
 		createEnableMruPref(comp);
@@ -289,6 +291,12 @@ public class ViewsPreferencePage extends PreferencePage implements IWorkbenchPre
 		useRoundTabs = createCheckButton(composite, WorkbenchMessages.ViewsPreference_useRoundTabs, enabled);
 	}
 
+	protected void createUseFindReplaceOverlay(Composite composite) {
+		IEclipsePreferences prefs = getSwtRendererPreferences();
+		boolean enabled = prefs.getBoolean("USE_FIND_REPLACE_OVERLAY", true); //$NON-NLS-1$
+		useFindReplaceOverlay = createCheckButton(composite, "use modern Find/Replace-Overlay", enabled); //$NON-NLS-1$
+	}
+
 	protected void createEnableMruPref(Composite composite) {
 		createLabel(composite, ""); //$NON-NLS-1$
 		createLabel(composite, WorkbenchMessages.ViewsPreference_visibleTabs_description);
@@ -332,6 +340,7 @@ public class ViewsPreferencePage extends PreferencePage implements IWorkbenchPre
 		prefs.putBoolean(PartRenderingEngine.ENABLED_THEME_KEY, themingEnabled.getSelection());
 
 		prefs.putBoolean(CTabRendering.USE_ROUND_TABS, useRoundTabs.getSelection());
+		prefs.putBoolean("USE_FIND_REPLACE_OVERLAY", useFindReplaceOverlay.getSelection()); //$NON-NLS-1$
 		try {
 			prefs.flush();
 		} catch (BackingStoreException e) {
@@ -407,6 +416,7 @@ public class ViewsPreferencePage extends PreferencePage implements IWorkbenchPre
 		useColoredLabels.setSelection(apiStore.getDefaultBoolean(IWorkbenchPreferenceConstants.USE_COLORED_LABELS));
 
 		useRoundTabs.setSelection(CTabRendering.USE_ROUND_TABS_DEFAULT);
+		useFindReplaceOverlay.setSelection(true);
 		enableMru.setSelection(getDefaultMRUValue());
 		super.performDefaults();
 	}

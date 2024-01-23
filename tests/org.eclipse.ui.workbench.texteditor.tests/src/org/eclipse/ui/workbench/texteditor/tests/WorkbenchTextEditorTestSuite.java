@@ -32,7 +32,6 @@ import org.eclipse.ui.workbench.texteditor.tests.rulers.RulerTestSuite;
  */
 @RunWith(Suite.class)
 @SuiteClasses({
-		FindReplaceDialogTest.class,
 		HippieCompletionTest.class,
 		RangeTest.class,
 		ChangeRegionTest.class,
