@@ -365,7 +365,7 @@ class FindReplaceOverlay extends Dialog {
 			targetWidget.addPaintListener(widgetMovementListener);
 			targetPart.getSite().getPage().addPartListener(partListener);
 		} else if (targetPart instanceof IFindReplaceTargetExtension5 repositioningProvider) {
-			repositioningProvider.attachMovementUpdater(new Runnable() {
+			repositioningProvider.beginOverlaySession(new Runnable() {
 
 				@Override
 				public void run() {

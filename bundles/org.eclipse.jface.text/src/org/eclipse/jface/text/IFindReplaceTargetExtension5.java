@@ -9,9 +9,7 @@ public interface IFindReplaceTargetExtension5 {
 
 	public Rectangle getFindReplaceOverlayBounds(int idealWidth, int idealHeight);
 
-	public void attachMovementUpdater(Runnable callback);
-
-	public void beginOverlaySession();
+	public void beginOverlaySession(Runnable movementUpdateCallback);
 
 	public void endOverlaySession();
 

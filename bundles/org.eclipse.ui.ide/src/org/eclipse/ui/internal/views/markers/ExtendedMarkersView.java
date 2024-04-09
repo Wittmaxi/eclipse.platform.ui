@@ -71,6 +71,8 @@ import org.eclipse.swt.dnd.DragSourceEvent;
 import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -170,6 +172,7 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 
 	private UIUpdateJob uiUpdateJob;
 
+	private Composite parentComponent;
 	private MarkersTreeViewer viewer;
 
 	private Action filterAction;
@@ -265,6 +268,7 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 	 * Create the columns for the receiver.
 	 */
 	private void createViewer(Composite parent) {
+		parentComponent = parent;
 		parent.setLayout(new FillLayout());
 
 		viewer = new MarkersTreeViewer(new Tree(parent, SWT.H_SCROLL
@@ -454,10 +458,27 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 
 		getSite().setSelectionProvider(viewer);
 
-		viewer.getTree().addPaintListener(new PaintListener() {
+		parentComponent.addPaintListener(new PaintListener() {
 
 			@Override
 			public void paintControl(PaintEvent e) {
+				if (updateFindReplaceOverlayPosition != null) {
+					updateFindReplaceOverlayPosition.run();
+				}
+			}
+
+		});
+		parentComponent.addControlListener(new ControlListener() {
+
+			@Override
+			public void controlMoved(ControlEvent e) {
+				if (updateFindReplaceOverlayPosition != null) {
+					updateFindReplaceOverlayPosition.run();
+				}
+			}
+
+			@Override
+			public void controlResized(ControlEvent e) {
 				if (updateFindReplaceOverlayPosition != null) {
 					updateFindReplaceOverlayPosition.run();
 				}
@@ -1760,26 +1781,21 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 
 	@Override
 	public Point getSelection() {
-
 		return new Point(0, 0);
 	}
 
 	@Override
 	public String getSelectionText() {
-		// TODO Auto-generated method stub
-		return null;
+		return ""; //$NON-NLS-1$
 	}
 
 	@Override
 	public boolean isEditable() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public void replaceSelection(String text) {
-		// TODO Auto-generated method stub
-
 	}
 
 	/**
@@ -1798,22 +1814,20 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 
 	@Override
 	public Rectangle getFindReplaceOverlayBounds(int idealWidth, int idealHeight) {
-		int width = viewer.getTree().getBounds().width / 2;
+		Point ownPosition = viewer.getTree().toDisplay(0, 0);
+		Rectangle ownBounds = viewer.getTree().getBounds();
+		int width = ownBounds.width / 2;
 		int height = idealHeight;
-		int x = viewer.getTree().getBounds().x + width;
-		int y = viewer.getTree().getBounds().y + height;
+		int x = ownPosition.x + width;
+		int y = ownPosition.y;
 
 		return new Rectangle(x, y, width, height);
 	}
 
 	@Override
-	public void attachMovementUpdater(Runnable callback) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void beginOverlaySession() {
-		// TODO Auto-generated method stub
+	public void beginOverlaySession(Runnable movementUpdateCallback) {
+		updateFindReplaceOverlayPosition = movementUpdateCallback;
+		movementUpdateCallback.run();
 	}
 
 	@Override

@@ -33,7 +33,6 @@ public class BookmarksView extends MarkerSupportView {
 	 */
 	public BookmarksView() {
 		super(MarkerSupportRegistry.BOOKMARKS_GENERATOR);
-
 	}
 
 	@Override

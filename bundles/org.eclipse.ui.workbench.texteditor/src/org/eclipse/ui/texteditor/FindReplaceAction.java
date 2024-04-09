@@ -28,6 +28,7 @@ import org.eclipse.jface.dialogs.IPageChangedListener;
 import org.eclipse.jface.dialogs.PageChangedEvent;
 
 import org.eclipse.jface.text.IFindReplaceTarget;
+import org.eclipse.jface.text.IFindReplaceTargetExtension5;
 
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.IPartService;
@@ -324,8 +325,11 @@ public class FindReplaceAction extends ResourceAction implements IUpdate {
 
 	@Override
 	public void run() {
+		boolean canShowOverlay = fWorkbenchPart instanceof StatusTextEditor
+				|| fWorkbenchPart instanceof IFindReplaceTargetExtension5;
+
 		// only show Overlay on Text-Editors, don't show it on Consoles
-		if (shouldShowModernOverlay() && fWorkbenchPart instanceof StatusTextEditor) {
+		if (shouldShowModernOverlay() && canShowOverlay) {
 			showModernOverlay();
 		} else {
 			if (fTarget == null) {
