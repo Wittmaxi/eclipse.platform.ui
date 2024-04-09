@@ -175,6 +175,8 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 	private Action filterAction;
 	private FindReplaceAction findReplaceAction;
 
+	private Runnable updateFindReplaceOverlayPosition;
+
 	/**
 	 * The user can set a custom name when opening a new view. This value has to be
 	 * persisted when closing the Eclipse. Otherwise the view would fall back to its
@@ -452,6 +454,16 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 
 		getSite().setSelectionProvider(viewer);
 
+		viewer.getTree().addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				if (updateFindReplaceOverlayPosition != null) {
+					updateFindReplaceOverlayPosition.run();
+				}
+			}
+
+		});
 		IUndoContext undoContext= getUndoContext();
 		undoAction= new UndoActionHandler(getSite(), undoContext);
 		undoAction.setActionDefinitionId(IWorkbenchCommandConstants.EDIT_UNDO);
@@ -1743,7 +1755,6 @@ public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget,
 
 		viewer.setSelection(new TreeSelection(selection.toArray(new TreePath[0])));
 
-		// very messy! TODO revisit how inline findreplace works
 		return 0;
 	}
 

@@ -59,6 +59,7 @@ import org.eclipse.jface.window.Window;
 
 import org.eclipse.jface.text.IFindReplaceTarget;
 import org.eclipse.jface.text.IFindReplaceTargetExtension;
+import org.eclipse.jface.text.IFindReplaceTargetExtension5;
 
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPage;
@@ -363,6 +364,22 @@ class FindReplaceOverlay extends Dialog {
 			targetWidget.getShell().addControlListener(shellMovementListener);
 			targetWidget.addPaintListener(widgetMovementListener);
 			targetPart.getSite().getPage().addPartListener(partListener);
+		} else if (targetPart instanceof IFindReplaceTargetExtension5 repositioningProvider) {
+			repositioningProvider.attachMovementUpdater(new Runnable() {
+
+				@Override
+				public void run() {
+					repositionToGivenBounds();
+				}
+			});
+		}
+	}
+
+	private void repositionToGivenBounds() {
+		if (targetPart instanceof IFindReplaceTargetExtension5 repositioningProvider) {
+			getShell().layout(true);
+			getShell()
+					.setBounds(repositioningProvider.getFindReplaceOverlayBounds(1000, getShell().getBounds().height));
 		}
 	}
 
