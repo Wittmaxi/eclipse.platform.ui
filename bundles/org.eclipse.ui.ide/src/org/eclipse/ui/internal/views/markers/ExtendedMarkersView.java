@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import org.eclipse.core.commands.operations.IUndoContext;
 import org.eclipse.core.resources.IFile;
@@ -42,7 +43,10 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.text.IFindReplaceTarget;
+import org.eclipse.jface.text.IFindReplaceTargetExtension5;
 import org.eclipse.jface.util.OpenStrategy;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.IContentProvider;
@@ -53,6 +57,8 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
+import org.eclipse.jface.viewers.TreePath;
+import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.window.Window;
@@ -74,6 +80,8 @@ import org.eclipse.swt.events.TreeAdapter;
 import org.eclipse.swt.events.TreeEvent;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -110,6 +118,7 @@ import org.eclipse.ui.part.MarkerTransfer;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.eclipse.ui.statushandlers.StatusManager;
+import org.eclipse.ui.texteditor.FindReplaceAction;
 import org.eclipse.ui.views.WorkbenchViewerSetup;
 import org.eclipse.ui.views.markers.MarkerField;
 import org.eclipse.ui.views.markers.MarkerItem;
@@ -132,7 +141,7 @@ import org.eclipse.ui.views.markers.internal.MarkerSupportRegistry;
  *
  * @since 3.4
  */
-public class ExtendedMarkersView extends ViewPart {
+public class ExtendedMarkersView extends ViewPart implements IFindReplaceTarget, IFindReplaceTargetExtension5 {
 
 	/**
 	 * The Markers View Update Job Family
@@ -164,6 +173,7 @@ public class ExtendedMarkersView extends ViewPart {
 	private MarkersTreeViewer viewer;
 
 	private Action filterAction;
+	private FindReplaceAction findReplaceAction;
 
 	/**
 	 * The user can set a custom name when opening a new view. This value has to be
@@ -434,6 +444,11 @@ public class ExtendedMarkersView extends ViewPart {
 		initDragAndDrop();
 
 		initToolBar();
+
+		setFindReplaceAction(
+				new FindReplaceAction(ResourceBundle.getBundle("org.eclipse.ui.texteditor.ConstructedEditorMessages"), //$NON-NLS-1$
+						"MarkersView.Find.", //$NON-NLS-1$
+						this));
 
 		getSite().setSelectionProvider(viewer);
 
@@ -1692,5 +1707,106 @@ public class ExtendedMarkersView extends ViewPart {
 			return adapter.cast(viewer);
 		}
 		return super.getAdapter(adapter);
+	}
+
+	@Override
+	public boolean canPerformFind() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int findAndSelect(int widgetOffset, String findString, boolean searchForward, boolean caseSensitive,
+			boolean wholeWord) {
+
+		var tree = viewer.getTree();
+		var items = tree.getItems();
+		ArrayList<TreePath> selection = new ArrayList<>();
+		for (var item : items) {
+			// TODO: has children?
+			for (var child : ((MarkerViewerContentProvider) viewer.getContentProvider()).getElements(item)) {
+				MarkerSupportItem[] markerCategoryChildren = ((MarkerCategory) child).getChildren();
+				for (var markerSupportItem : markerCategoryChildren) {
+					String markerMessage = markerSupportItem.getMarker().getAttribute(IMarker.MESSAGE,
+							MarkerSupportInternalUtilities.UNKNOWN_ATRRIBTE_VALUE_STRING);
+					if (markerMessage.contains(findString)) {
+						ArrayList<Object> selectionPath = new ArrayList<>();
+						selectionPath.add(item);
+						selectionPath.add(markerSupportItem);
+						selection.add(new TreePath(selectionPath.toArray()));
+					}
+				}
+				var text = ((ColumnLabelProvider) viewer.getLabelProvider(1)).getText(child);
+				System.out.println(text);
+			}
+		}
+
+		viewer.setSelection(new TreeSelection(selection.toArray(new TreePath[0])));
+
+		// very messy! TODO revisit how inline findreplace works
+		return 0;
+	}
+
+	@Override
+	public Point getSelection() {
+
+		return new Point(0, 0);
+	}
+
+	@Override
+	public String getSelectionText() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isEditable() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void replaceSelection(String text) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/**
+	 * @return Returns the findReplaceAction.
+	 */
+	public FindReplaceAction getFindReplaceAction() {
+		return findReplaceAction;
+	}
+
+	/**
+	 * @param findReplaceAction The findReplaceAction to set.
+	 */
+	public void setFindReplaceAction(FindReplaceAction findReplaceAction) {
+		this.findReplaceAction = findReplaceAction;
+	}
+
+	@Override
+	public Rectangle getFindReplaceOverlayBounds(int idealWidth, int idealHeight) {
+		int width = viewer.getTree().getBounds().width / 2;
+		int height = idealHeight;
+		int x = viewer.getTree().getBounds().x + width;
+		int y = viewer.getTree().getBounds().y + height;
+
+		return new Rectangle(x, y, width, height);
+	}
+
+	@Override
+	public void attachMovementUpdater(Runnable callback) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void beginOverlaySession() {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void endOverlaySession() {
+		// TODO Auto-generated method stub
 	}
 }
