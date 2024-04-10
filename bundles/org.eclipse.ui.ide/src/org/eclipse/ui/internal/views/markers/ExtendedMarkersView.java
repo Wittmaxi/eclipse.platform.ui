@@ -21,6 +21,7 @@ package org.eclipse.ui.internal.views.markers;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1763,6 +1764,11 @@ public class ExtendedMarkersView extends ViewPart
 		Tree tree = viewer.getTree();
 		TreeItem[] items = tree.getItems();
 
+//		List<TreeItem> selection = Arrays.asList(viewer.getTree().getSelection());
+//		for (var i : selection) {
+//			System.out.println(i);
+//		}
+
 		for (var item : items) {
 			for (var child : ((MarkerViewerContentProvider) viewer.getContentProvider()).getElements(item)) {
 				MarkerSupportItem[] markerCategoryChildren = ((MarkerCategory) child).getChildren();
@@ -1778,6 +1784,29 @@ public class ExtendedMarkersView extends ViewPart
 		}
 	}
 
+	interface StringMatcher {
+		public boolean doesStringMatch(String sourceString, String searchString);
+	}
+
+	class NormalMatcher implements StringMatcher {
+
+		@Override
+		public boolean doesStringMatch(String sourceString, String searchString) {
+			return sourceString.split(System.lineSeparator())[0].contains(searchString);
+		}
+
+	}
+
+	class WholeWordMatcher implements StringMatcher {
+
+		@Override
+		public boolean doesStringMatch(String sourceString, String searchString) {
+			String firstLine = sourceString.split(System.lineSeparator())[0];
+			List<String> words = Arrays.asList(firstLine.split(" ")); //$NON-NLS-1$
+			return words.contains(searchString);
+		}
+	}
+
 	@Override
 	public int findAndSelect(int widgetOffset, String findString, boolean searchForward, boolean caseSensitive,
 			boolean wholeWord) {
@@ -1785,12 +1814,22 @@ public class ExtendedMarkersView extends ViewPart
 
 		int rowIncrement = searchForward ? 1 : -1;
 
+		StringMatcher matcher;
+
+		if (wholeWord) {
+			matcher = new WholeWordMatcher();
+		} else {
+			matcher = new NormalMatcher();
+		}
+
 		for (int i = widgetOffset; i >= 0 && i < indexToNodeMap.size(); i += rowIncrement) {
 			MarkerNode content = getNodeByIndex(i);
 
 			String markerMessage = content.supportItem.getMarker().getAttribute(IMarker.MESSAGE,
 					MarkerSupportInternalUtilities.UNKNOWN_ATRRIBTE_VALUE_STRING);
-			if (markerMessage.contains(findString)) {
+			if (matcher.doesStringMatch(markerMessage, findString)) {
+				System.out.println("MARKER MESSAGE: "); //$NON-NLS-1$
+				System.out.println(markerMessage);
 				viewer.setSelection(
 						new TreeSelection(new TreePath(new Object[] { content.item, content.supportItem })));
 				lastSelection = new Point(i, 1);
@@ -1803,6 +1842,7 @@ public class ExtendedMarkersView extends ViewPart
 
 	@Override
 	public Point getSelection() {
+		buildMarkerIndex();
 		return lastSelection;
 	}
 
