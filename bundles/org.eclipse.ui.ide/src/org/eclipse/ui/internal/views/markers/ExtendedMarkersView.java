@@ -37,6 +37,8 @@ import org.eclipse.core.runtime.Adapters;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.help.IContext;
 import org.eclipse.help.IContextProvider;
 import org.eclipse.jface.action.Action;
@@ -91,6 +93,7 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
@@ -456,6 +459,8 @@ public class ExtendedMarkersView extends ViewPart
 
 		getSite().setSelectionProvider(viewer);
 
+		// Todo: which of these listeners are REALLY needed?
+
 		parentComponent.addPaintListener(new PaintListener() {
 
 			@Override
@@ -483,6 +488,23 @@ public class ExtendedMarkersView extends ViewPart
 			}
 
 		});
+		parentComponent.getShell().addControlListener(new ControlListener() {
+
+			@Override
+			public void controlMoved(ControlEvent e) {
+				if (updateFindReplaceOverlayPosition != null) {
+					updateFindReplaceOverlayPosition.run();
+				}
+			}
+
+			@Override
+			public void controlResized(ControlEvent e) {
+				if (updateFindReplaceOverlayPosition != null) {
+					updateFindReplaceOverlayPosition.run();
+				}
+			}
+		});
+
 		IUndoContext undoContext = getUndoContext();
 		undoAction = new UndoActionHandler(getSite(), undoContext);
 		undoAction.setActionDefinitionId(IWorkbenchCommandConstants.EDIT_UNDO);
@@ -1784,26 +1806,121 @@ public class ExtendedMarkersView extends ViewPart
 		}
 	}
 
-	interface StringMatcher {
+	interface StringMatcher { // an abstract class probably makes more sense here!
 		public boolean doesStringMatch(String sourceString, String searchString);
+
+		public StringMatcher chain(StringMatcher chainedMatcher);
 	}
 
-	class NormalMatcher implements StringMatcher {
+	class MatchAll implements StringMatcher {
+		StringMatcher otherMatcher = null;
+
+		private MatchAll(StringMatcher other) {
+			otherMatcher = other;
+		}
+
+		/**
+		 *
+		 */
+		public MatchAll() {
+			// TODO Auto-generated constructor stub
+		}
 
 		@Override
 		public boolean doesStringMatch(String sourceString, String searchString) {
+			if (otherMatcher != null) {
+				return otherMatcher.doesStringMatch(sourceString, searchString);
+			}
+			return true;
+		}
+
+		@Override
+		public StringMatcher chain(StringMatcher chainedMatcher) {
+			return new MatchAll(chainedMatcher);
+		}
+
+	}
+
+	class NormalMatcher implements StringMatcher {
+		StringMatcher otherMatcher = null;
+
+		NormalMatcher() {
+
+		}
+
+		private NormalMatcher(StringMatcher other) {
+			otherMatcher = other;
+		}
+
+		@Override
+		public boolean doesStringMatch(String sourceString, String searchString) {
+			if (otherMatcher != null) {
+				return otherMatcher.doesStringMatch(sourceString, searchString);
+			}
+			String lowerCaseSource = sourceString.toLowerCase();
+			String lowerCaseSearch = searchString.toLowerCase();
+			return lowerCaseSource.split(System.lineSeparator())[0].contains(lowerCaseSearch);
+		}
+
+
+		@Override
+		public StringMatcher chain(StringMatcher chainedMatcher) {
+			return new NormalMatcher(chainedMatcher);
+		}
+
+	}
+
+	class CaseSensitiveMatcher implements StringMatcher {
+		StringMatcher otherMatcher = null;
+
+		CaseSensitiveMatcher() {
+
+		}
+
+		private CaseSensitiveMatcher(StringMatcher other) {
+			otherMatcher = other;
+		}
+
+		@Override
+		public boolean doesStringMatch(String sourceString, String searchString) {
+			if (otherMatcher != null) {
+				return otherMatcher.doesStringMatch(sourceString, searchString);
+			}
 			return sourceString.split(System.lineSeparator())[0].contains(searchString);
+		}
+
+		@Override
+		public StringMatcher chain(StringMatcher chainedMatcher) {
+			return new CaseSensitiveMatcher(chainedMatcher);
 		}
 
 	}
 
 	class WholeWordMatcher implements StringMatcher {
+		StringMatcher otherMatcher = null;
+
+		WholeWordMatcher() {
+
+		}
+
+		private WholeWordMatcher(StringMatcher other) {
+			otherMatcher = other;
+		}
 
 		@Override
 		public boolean doesStringMatch(String sourceString, String searchString) {
+			if (otherMatcher != null) {
+				return otherMatcher.doesStringMatch(sourceString, searchString);
+			}
 			String firstLine = sourceString.split(System.lineSeparator())[0];
 			List<String> words = Arrays.asList(firstLine.split(" ")); //$NON-NLS-1$
 			return words.contains(searchString);
+		}
+
+
+		@Override
+		public StringMatcher chain(StringMatcher chainedMatcher) {
+			return new WholeWordMatcher(chainedMatcher);
 		}
 	}
 
@@ -1814,12 +1931,13 @@ public class ExtendedMarkersView extends ViewPart
 
 		int rowIncrement = searchForward ? 1 : -1;
 
-		StringMatcher matcher;
+		StringMatcher matcher = new MatchAll();
 
 		if (wholeWord) {
-			matcher = new WholeWordMatcher();
-		} else {
-			matcher = new NormalMatcher();
+			matcher = matcher.chain(new WholeWordMatcher());
+		}
+		if (caseSensitive) {
+			matcher = matcher.chain(new CaseSensitiveMatcher());
 		}
 
 		for (int i = widgetOffset; i >= 0 && i < indexToNodeMap.size(); i += rowIncrement) {
@@ -1876,12 +1994,26 @@ public class ExtendedMarkersView extends ViewPart
 
 	@Override
 	public Rectangle getFindReplaceOverlayBounds(int idealWidth, int idealHeight) {
-		Point ownPosition = viewer.getTree().toDisplay(0, 0);
-		Rectangle ownBounds = viewer.getTree().getBounds();
-		int width = ownBounds.width / 2;
+		IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode("org.eclipse.ui.editors"); //$NON-NLS-1$
+		boolean placeAtBottomOfPage = preferences.getBoolean("findreplaceoverlayatbottom", false); //$NON-NLS-1$
+
+		Point ownPosition = parentComponent.toDisplay(0, 0);
+		Rectangle ownBounds = parentComponent.getBounds();
+		int width = Math.min(ownBounds.width / 2, idealWidth);
 		int height = idealHeight;
-		int x = ownPosition.x + width;
+		int x = ownPosition.x + ownBounds.width - width;
 		int y = ownPosition.y;
+
+		if (placeAtBottomOfPage) {
+
+			ScrollBar horizontalBar = viewer.getTree().getHorizontalBar();
+			int barHeight = 0;
+			if (horizontalBar != null && horizontalBar.isVisible()) {
+				barHeight = horizontalBar.getSize().y;
+			}
+
+			y += ownBounds.height - height - barHeight;
+		}
 
 		return new Rectangle(x, y, width, height);
 	}
@@ -1894,7 +2026,7 @@ public class ExtendedMarkersView extends ViewPart
 
 	@Override
 	public void endOverlaySession() {
-		// TODO Auto-generated method stub
+		updateFindReplaceOverlayPosition = null;
 	}
 
 	@Override

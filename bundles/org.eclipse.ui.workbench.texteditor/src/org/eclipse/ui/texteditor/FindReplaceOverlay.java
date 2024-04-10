@@ -293,6 +293,10 @@ class FindReplaceOverlay extends Dialog {
 
 	@Override
 	public boolean close() {
+		if (targetPart instanceof IFindReplaceTargetExtension5 overlayTarget) {
+			overlayTarget.endOverlaySession();
+		}
+
 		if (!overlayOpen) {
 			return true;
 		}
@@ -379,7 +383,8 @@ class FindReplaceOverlay extends Dialog {
 		if (targetPart instanceof IFindReplaceTargetExtension5 repositioningProvider) {
 			getShell().layout(true);
 			getShell()
-					.setBounds(repositioningProvider.getFindReplaceOverlayBounds(1000, getShell().getBounds().height));
+					.setBounds(repositioningProvider.getFindReplaceOverlayBounds(calculateMaxTotalOverlaySize(),
+							getShell().getBounds().height));
 		}
 	}
 
@@ -840,6 +845,26 @@ class FindReplaceOverlay extends Dialog {
 		}
 	}
 
+	private int calculateMaxBarSize() {
+		GC gc = new GC(searchBar);
+		gc.setFont(searchBar.getFont());
+		return gc.stringExtent("THIS TEXT HAS A REASONABLE LENGTH FOR SEARCHING").x; //$NON-NLS-1$
+	}
+
+	private int calculateMaxTotalOverlaySize() {
+		int replaceToggleWidth = 0;
+		if (replaceToggle != null && !replaceToggle.isDisposed()) {
+			replaceToggleWidth = replaceToggle.getBounds().width;
+		}
+		int toolBarWidth = searchTools.getSize().x;
+		GC gc = new GC(searchBar);
+		gc.setFont(searchBar.getFont());
+		int idealWidth = calculateMaxBarSize();
+
+		int newWidth = idealWidth + toolBarWidth + replaceToggleWidth;
+		return newWidth;
+	}
+
 	private int getIdealDialogWidth(Rectangle targetBounds) {
 		int replaceToggleWidth = 0;
 		if (replaceToggle != null && !replaceToggle.isDisposed()) {
@@ -848,7 +873,7 @@ class FindReplaceOverlay extends Dialog {
 		int toolBarWidth = searchTools.getSize().x;
 		GC gc = new GC(searchBar);
 		gc.setFont(searchBar.getFont());
-		int idealWidth = gc.stringExtent("THIS TEXT HAS A REASONABLE LENGTH FOR SEARCHING").x; //$NON-NLS-1$
+		int idealWidth = calculateMaxBarSize();
 		int idealCompromiseWidth = gc.stringExtent("THIS TEXT HAS A REASONABLE").x; //$NON-NLS-1$
 		int worstCompromiseWidth = gc.stringExtent("THIS TEXT ").x; //$NON-NLS-1$
 
