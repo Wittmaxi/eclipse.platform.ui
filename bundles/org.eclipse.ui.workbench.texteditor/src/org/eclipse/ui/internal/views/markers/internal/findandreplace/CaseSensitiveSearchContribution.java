@@ -1,13 +1,14 @@
 package org.eclipse.ui.internal.views.markers.internal.findandreplace;
 
+import org.eclipse.swt.graphics.Image;
+
 import org.eclipse.jface.text.SearchContribution;
 import org.eclipse.jface.text.StringMatcher;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.ui.internal.views.markers.ProblemViewImages;
+
 import org.eclipse.ui.texteditor.FindReplaceOverlayImages;
 
 /**
- * @since 3.4
+ * @since 3.17
  *
  */
 public class CaseSensitiveSearchContribution implements SearchContribution {
@@ -29,9 +30,7 @@ public class CaseSensitiveSearchContribution implements SearchContribution {
 
 	@Override
 	public Image getImage() {
-		ProblemViewImages images = new ProblemViewImages();
-
-		return images.get(FindReplaceOverlayImages.OBJ_CASE_SENSITIVE);
+		return FindReplaceOverlayImages.get(FindReplaceOverlayImages.OBJ_CASE_SENSITIVE);
 	}
 
 	@Override

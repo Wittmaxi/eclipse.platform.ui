@@ -1,9 +1,10 @@
 package org.eclipse.ui.internal.views.markers.internal.findandreplace;
 
+import org.eclipse.swt.graphics.Image;
+
 import org.eclipse.jface.text.SearchContribution;
 import org.eclipse.jface.text.StringMatcher;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.ui.internal.views.markers.ProblemViewImages;
+
 import org.eclipse.ui.texteditor.FindReplaceOverlayImages;
 
 /**
@@ -31,9 +32,7 @@ public class GroupedSearchContribution implements SearchContribution {
 
 	@Override
 	public Image getImage() {
-		ProblemViewImages images = new ProblemViewImages();
-
-		return images.get(FindReplaceOverlayImages.OBJ_REPLACE_ALL);
+		return FindReplaceOverlayImages.get(FindReplaceOverlayImages.OBJ_REPLACE_ALL);
 	}
 
 	@Override
