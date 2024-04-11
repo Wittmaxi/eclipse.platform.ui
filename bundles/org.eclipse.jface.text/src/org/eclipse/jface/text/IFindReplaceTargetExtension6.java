@@ -11,4 +11,6 @@ public interface IFindReplaceTargetExtension6 {
 
 	public List<SearchContribution> getSearchContributions();
 
+	public int findAndSelect(int offset, String findString, boolean forwardSearch, StringMatcher matcher);
+
 }

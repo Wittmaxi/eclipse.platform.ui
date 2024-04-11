@@ -29,8 +29,11 @@ import org.eclipse.jface.text.IFindReplaceTarget;
 import org.eclipse.jface.text.IFindReplaceTargetExtension;
 import org.eclipse.jface.text.IFindReplaceTargetExtension3;
 import org.eclipse.jface.text.IFindReplaceTargetExtension4;
+import org.eclipse.jface.text.IFindReplaceTargetExtension6;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.Region;
+import org.eclipse.jface.text.SearchContribution;
+import org.eclipse.jface.text.StringMatcher;
 
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
@@ -43,6 +46,7 @@ import org.eclipse.ui.internal.findandreplace.status.InvalidRegExStatus;
 import org.eclipse.ui.internal.findandreplace.status.NoStatus;
 import org.eclipse.ui.internal.findandreplace.status.ReplaceAllStatus;
 import org.eclipse.ui.internal.texteditor.NLSUtility;
+import org.eclipse.ui.internal.views.markers.internal.findandreplace.MatchAll;
 
 import org.eclipse.ui.texteditor.IEditorStatusLine;
 import org.eclipse.ui.texteditor.IFindReplaceTargetExtension2;
@@ -500,10 +504,18 @@ public class FindReplaceLogic implements IFindReplaceLogic {
 
 	@Override
 	public int findAndSelect(int offset, String findString) {
-		if (target instanceof IFindReplaceTargetExtension3)
+		if (target instanceof IFindReplaceTargetExtension6 customContributionMatcherTarget) {
+			StringMatcher matcher = new MatchAll();
+			for (SearchContribution contribution : activeContributions) {
+				matcher = matcher.chain(contribution.getMatcher());
+			}
+			return customContributionMatcherTarget.findAndSelect(offset, findString, isActive(SearchOptions.FORWARD),
+					matcher);
+		} else if (target instanceof IFindReplaceTargetExtension3) {
 			return ((IFindReplaceTargetExtension3) target).findAndSelect(offset, findString,
 					isActive(SearchOptions.FORWARD), isActive(SearchOptions.CASE_SENSITIVE),
 					isWholeWordSearchAvailableAndActive(findString), isActive(SearchOptions.REGEX));
+		}
 		return target.findAndSelect(offset, findString, isActive(SearchOptions.FORWARD),
 				isActive(SearchOptions.CASE_SENSITIVE), isWholeWordSearchAvailableAndActive(findString));
 	}
@@ -701,6 +713,23 @@ public class FindReplaceLogic implements IFindReplaceLogic {
 	@Override
 	public IFindReplaceTarget getTarget() {
 		return target;
+	}
+
+	Set<SearchContribution> activeContributions = new HashSet<>();
+
+	@Override
+	public void activate(SearchContribution contribution) {
+		activeContributions.add(contribution);
+	}
+
+	@Override
+	public void deactivate(SearchContribution contribution) {
+		activeContributions.remove(contribution);
+	}
+
+	@Override
+	public boolean isActive(SearchContribution searchOption) {
+		return activeContributions.contains(searchOption);
 	}
 
 }

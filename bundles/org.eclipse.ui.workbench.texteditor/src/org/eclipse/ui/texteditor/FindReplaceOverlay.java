@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.ui.texteditor;
 
+import java.util.List;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.ControlEvent;
@@ -61,6 +63,8 @@ import org.eclipse.jface.text.IFindReplaceTarget;
 import org.eclipse.jface.text.IFindReplaceTargetExtension;
 import org.eclipse.jface.text.IFindReplaceTargetExtension3;
 import org.eclipse.jface.text.IFindReplaceTargetExtension5;
+import org.eclipse.jface.text.IFindReplaceTargetExtension6;
+import org.eclipse.jface.text.SearchContribution;
 
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPage;
@@ -429,16 +433,45 @@ class FindReplaceOverlay extends Dialog {
 		textBarForRetrievingTheRightColor.dispose();
 	}
 
+	private void buildToolItemForContribution(SearchContribution contribution) {
+		searchInSelectionButton = new ToolItem(searchTools, SWT.CHECK);
+		searchInSelectionButton.setImage(contribution.getImage());
+		searchInSelectionButton.setToolTipText(contribution.getToolTipText());
+		searchInSelectionButton.setSelection(findReplaceLogic.isActive(contribution));
+		searchInSelectionButton.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				activateInFindReplacerIf(contribution, !searchInSelectionButton.getSelection());
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// Do Nothing
+			}
+		});
+	}
+
 	private void createSearchTools() {
 		searchTools = new ToolBar(searchContainer, SWT.HORIZONTAL);
 		GridDataFactory.fillDefaults().grab(false, true).align(GridData.CENTER, GridData.END).applyTo(searchTools);
 
-		createWholeWordsButton();
-		createCaseSensitiveButton();
-		if (targetPart instanceof IFindReplaceTargetExtension3) {
-			createRegexSearchButton();
+		if (targetPart instanceof IFindReplaceTargetExtension6 customContributionTarget
+				&& customContributionTarget.useCustomSearchContributions()) {
+			List<SearchContribution> contributions = customContributionTarget.getSearchContributions();
+
+			for (var contribution : contributions) {
+				buildToolItemForContribution(null);
+			}
+
+		} else {
+			createWholeWordsButton();
+			createCaseSensitiveButton();
+			if (targetPart instanceof IFindReplaceTargetExtension3) {
+				createRegexSearchButton();
+			}
+			createAreaSearchButton();
 		}
-		createAreaSearchButton();
 
 		@SuppressWarnings("unused")
 		ToolItem separator = new ToolItem(searchTools, SWT.SEPARATOR);
@@ -1010,6 +1043,14 @@ class FindReplaceOverlay extends Dialog {
 		searchBar.setForeground(feedbackColor);
 		if (colorReplaceBar && replaceBar != null && !replaceBar.isDisposed()) {
 			replaceBar.setForeground(feedbackColor);
+		}
+	}
+
+	private void activateInFindReplacerIf(SearchContribution contribution, boolean shouldActivate) {
+		if (shouldActivate) {
+			findReplaceLogic.activate(contribution);
+		} else {
+			findReplaceLogic.deactivate(contribution);
 		}
 	}
 

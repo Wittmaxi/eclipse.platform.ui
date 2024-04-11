@@ -1818,9 +1818,7 @@ public class ExtendedMarkersView extends ViewPart
 	@Override
 	public int findAndSelect(int widgetOffset, String findString, boolean searchForward, boolean caseSensitive,
 			boolean wholeWord) {
-		buildMarkerIndex();
 
-		int rowIncrement = searchForward ? 1 : -1;
 
 		StringMatcher matcher = new NormalMatcher().chain(groupMatcher);
 
@@ -1831,22 +1829,7 @@ public class ExtendedMarkersView extends ViewPart
 			matcher = matcher.chain(new CaseSensitiveMatcher());
 		}
 
-		for (int i = widgetOffset; i >= 0 && i < indexToNodeMap.size(); i += rowIncrement) {
-			MarkerNode content = getNodeByIndex(i);
-
-			String markerMessage = content.supportItem.getMarker().getAttribute(IMarker.MESSAGE,
-					MarkerSupportInternalUtilities.UNKNOWN_ATRRIBTE_VALUE_STRING);
-			if (matcher.doesStringMatch(markerMessage, findString)) {
-				System.out.println("MARKER MESSAGE: "); //$NON-NLS-1$
-				System.out.println(markerMessage);
-				viewer.setSelection(
-						new TreeSelection(new TreePath(new Object[] { content.item, content.supportItem })));
-				lastSelection = new Point(i, 1);
-				return lastSelection.x;
-			}
-		}
-
-		return -1;
+		return findAndSelect(widgetOffset, findString, searchForward, matcher);
 	}
 
 	@Override
@@ -1939,7 +1922,30 @@ public class ExtendedMarkersView extends ViewPart
 
 	@Override
 	public List<SearchContribution> getSearchContributions() {
-		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public int findAndSelect(int widgetOffset, String findString, boolean forwardSearch, StringMatcher matcher) {
+		buildMarkerIndex();
+		int rowIncrement = forwardSearch ? 1 : -1;
+
+		for (int i = widgetOffset; i >= 0 && i < indexToNodeMap.size(); i += rowIncrement) {
+			MarkerNode content = getNodeByIndex(i);
+
+			String markerMessage = content.supportItem.getMarker().getAttribute(IMarker.MESSAGE,
+					MarkerSupportInternalUtilities.UNKNOWN_ATRRIBTE_VALUE_STRING);
+			if (matcher.doesStringMatch(markerMessage, findString)) {
+				System.out.println("MARKER MESSAGE: "); //$NON-NLS-1$
+				System.out.println(markerMessage);
+				viewer.setSelection(
+						new TreeSelection(new TreePath(new Object[] { content.item, content.supportItem })));
+				lastSelection = new Point(i, 1);
+				return lastSelection.x;
+			}
+		}
+
+		return -1;
+	}
+
 }

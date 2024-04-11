@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %Plugin.name
 Bundle-SymbolicName: org.eclipse.ui.ide; singleton:=true
-Bundle-Version: 3.22.200.qualifier
+Bundle-Version: 4.0.0.qualifier
 Bundle-Activator: org.eclipse.ui.internal.ide.IDEWorkbenchPlugin
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: %Plugin.providerName
@@ -29,6 +29,7 @@ Export-Package: org.eclipse.ui,
  org.eclipse.ui.internal.views.framelist;x-internal:=true,
  org.eclipse.ui.internal.views.helpers;x-friends:="org.eclipse.ui.navigator,org.eclipse.jdt.ui",
  org.eclipse.ui.internal.views.markers;x-internal:=true,
+ org.eclipse.ui.internal.views.markers.internal.findandreplace,
  org.eclipse.ui.internal.views.navigator;x-internal:=true,
  org.eclipse.ui.internal.views.properties;x-internal:=true,
  org.eclipse.ui.internal.views.tasklist;x-internal:=true,

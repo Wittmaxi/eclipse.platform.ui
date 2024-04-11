@@ -16,6 +16,7 @@ package org.eclipse.ui.internal.findandreplace;
 import org.eclipse.swt.widgets.Display;
 
 import org.eclipse.jface.text.IFindReplaceTarget;
+import org.eclipse.jface.text.SearchContribution;
 
 import org.eclipse.ui.internal.findandreplace.status.IFindReplaceStatus;
 
@@ -34,6 +35,8 @@ public interface IFindReplaceLogic {
 	 */
 	public void activate(SearchOptions searchOption);
 
+	public void activate(SearchContribution contribution);
+
 	/**
 	 * Deactivate a search option
 	 *
@@ -41,11 +44,15 @@ public interface IFindReplaceLogic {
 	 */
 	public void deactivate(SearchOptions searchOption);
 
+	public void deactivate(SearchContribution contribution);
+
 	/**
 	 * @param searchOption option
 	 * @return whether the option is active
 	 */
 	public boolean isActive(SearchOptions searchOption);
+
+	public boolean isActive(SearchContribution contribution);
 
 	/**
 	 * Returns the current status of FindReplaceLogic. The Status can inform about
