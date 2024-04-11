@@ -59,6 +59,7 @@ import org.eclipse.jface.window.Window;
 
 import org.eclipse.jface.text.IFindReplaceTarget;
 import org.eclipse.jface.text.IFindReplaceTargetExtension;
+import org.eclipse.jface.text.IFindReplaceTargetExtension3;
 import org.eclipse.jface.text.IFindReplaceTargetExtension5;
 
 import org.eclipse.ui.IPartListener;
@@ -331,7 +332,9 @@ class FindReplaceOverlay extends Dialog {
 		searchTools.setBackground(color);
 		searchInSelectionButton.setBackground(color);
 		wholeWordSearchButton.setBackground(color);
-		regexSearchButton.setBackground(color);
+		if (regexSearchButton != null) {
+			regexSearchButton.setBackground(color);
+		}
 		caseSensitiveSearchButton.setBackground(color);
 		searchAllButton.setBackground(color);
 		searchUpButton.setBackground(color);
@@ -382,9 +385,8 @@ class FindReplaceOverlay extends Dialog {
 	private void repositionToGivenBounds() {
 		if (targetPart instanceof IFindReplaceTargetExtension5 repositioningProvider) {
 			getShell().layout(true);
-			getShell()
-					.setBounds(repositioningProvider.getFindReplaceOverlayBounds(calculateMaxTotalOverlaySize(),
-							getShell().getBounds().height));
+			getShell().setBounds(repositioningProvider.getFindReplaceOverlayBounds(calculateMaxTotalOverlaySize(),
+					getShell().getBounds().height));
 		}
 	}
 
@@ -433,7 +435,9 @@ class FindReplaceOverlay extends Dialog {
 
 		createWholeWordsButton();
 		createCaseSensitiveButton();
-		createRegexSearchButton();
+		if (targetPart instanceof IFindReplaceTargetExtension3) {
+			createRegexSearchButton();
+		}
 		createAreaSearchButton();
 
 		@SuppressWarnings("unused")

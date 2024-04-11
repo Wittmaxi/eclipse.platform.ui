@@ -21,7 +21,6 @@ package org.eclipse.ui.internal.views.markers;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +49,10 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.IFindReplaceTarget;
 import org.eclipse.jface.text.IFindReplaceTargetExtension4;
 import org.eclipse.jface.text.IFindReplaceTargetExtension5;
+import org.eclipse.jface.text.IFindReplaceTargetExtension6;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.text.SearchContribution;
+import org.eclipse.jface.text.StringMatcher;
 import org.eclipse.jface.util.OpenStrategy;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.EditingSupport;
@@ -119,6 +121,10 @@ import org.eclipse.ui.internal.WorkbenchPage;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.StatusUtil;
+import org.eclipse.ui.internal.views.markers.internal.findandreplace.CaseSensitiveMatcher;
+import org.eclipse.ui.internal.views.markers.internal.findandreplace.GroupedSearch;
+import org.eclipse.ui.internal.views.markers.internal.findandreplace.NormalMatcher;
+import org.eclipse.ui.internal.views.markers.internal.findandreplace.WholeWordMatcher;
 import org.eclipse.ui.menus.IMenuService;
 import org.eclipse.ui.operations.RedoActionHandler;
 import org.eclipse.ui.operations.UndoActionHandler;
@@ -151,7 +157,8 @@ import org.eclipse.ui.views.markers.internal.MarkerSupportRegistry;
  * @since 3.4
  */
 public class ExtendedMarkersView extends ViewPart
-		implements IFindReplaceTarget, IFindReplaceTargetExtension4, IFindReplaceTargetExtension5 {
+		implements IFindReplaceTarget, IFindReplaceTargetExtension4, IFindReplaceTargetExtension5,
+		IFindReplaceTargetExtension6 {
 
 	/**
 	 * The Markers View Update Job Family
@@ -1806,123 +1813,7 @@ public class ExtendedMarkersView extends ViewPart
 		}
 	}
 
-	interface StringMatcher { // an abstract class probably makes more sense here!
-		public boolean doesStringMatch(String sourceString, String searchString);
-
-		public StringMatcher chain(StringMatcher chainedMatcher);
-	}
-
-	class MatchAll implements StringMatcher {
-		StringMatcher otherMatcher = null;
-
-		private MatchAll(StringMatcher other) {
-			otherMatcher = other;
-		}
-
-		/**
-		 *
-		 */
-		public MatchAll() {
-			// TODO Auto-generated constructor stub
-		}
-
-		@Override
-		public boolean doesStringMatch(String sourceString, String searchString) {
-			if (otherMatcher != null) {
-				return otherMatcher.doesStringMatch(sourceString, searchString);
-			}
-			return true;
-		}
-
-		@Override
-		public StringMatcher chain(StringMatcher chainedMatcher) {
-			return new MatchAll(chainedMatcher);
-		}
-
-	}
-
-	class NormalMatcher implements StringMatcher {
-		StringMatcher otherMatcher = null;
-
-		NormalMatcher() {
-
-		}
-
-		private NormalMatcher(StringMatcher other) {
-			otherMatcher = other;
-		}
-
-		@Override
-		public boolean doesStringMatch(String sourceString, String searchString) {
-			if (otherMatcher != null) {
-				return otherMatcher.doesStringMatch(sourceString, searchString);
-			}
-			String lowerCaseSource = sourceString.toLowerCase();
-			String lowerCaseSearch = searchString.toLowerCase();
-			return lowerCaseSource.split(System.lineSeparator())[0].contains(lowerCaseSearch);
-		}
-
-
-		@Override
-		public StringMatcher chain(StringMatcher chainedMatcher) {
-			return new NormalMatcher(chainedMatcher);
-		}
-
-	}
-
-	class CaseSensitiveMatcher implements StringMatcher {
-		StringMatcher otherMatcher = null;
-
-		CaseSensitiveMatcher() {
-
-		}
-
-		private CaseSensitiveMatcher(StringMatcher other) {
-			otherMatcher = other;
-		}
-
-		@Override
-		public boolean doesStringMatch(String sourceString, String searchString) {
-			if (otherMatcher != null) {
-				return otherMatcher.doesStringMatch(sourceString, searchString);
-			}
-			return sourceString.split(System.lineSeparator())[0].contains(searchString);
-		}
-
-		@Override
-		public StringMatcher chain(StringMatcher chainedMatcher) {
-			return new CaseSensitiveMatcher(chainedMatcher);
-		}
-
-	}
-
-	class WholeWordMatcher implements StringMatcher {
-		StringMatcher otherMatcher = null;
-
-		WholeWordMatcher() {
-
-		}
-
-		private WholeWordMatcher(StringMatcher other) {
-			otherMatcher = other;
-		}
-
-		@Override
-		public boolean doesStringMatch(String sourceString, String searchString) {
-			if (otherMatcher != null) {
-				return otherMatcher.doesStringMatch(sourceString, searchString);
-			}
-			String firstLine = sourceString.split(System.lineSeparator())[0];
-			List<String> words = Arrays.asList(firstLine.split(" ")); //$NON-NLS-1$
-			return words.contains(searchString);
-		}
-
-
-		@Override
-		public StringMatcher chain(StringMatcher chainedMatcher) {
-			return new WholeWordMatcher(chainedMatcher);
-		}
-	}
+	GroupedSearch groupMatcher = new GroupedSearch();
 
 	@Override
 	public int findAndSelect(int widgetOffset, String findString, boolean searchForward, boolean caseSensitive,
@@ -1931,7 +1822,7 @@ public class ExtendedMarkersView extends ViewPart
 
 		int rowIncrement = searchForward ? 1 : -1;
 
-		StringMatcher matcher = new MatchAll();
+		StringMatcher matcher = new NormalMatcher().chain(groupMatcher);
 
 		if (wholeWord) {
 			matcher = matcher.chain(new WholeWordMatcher());
@@ -2039,5 +1930,16 @@ public class ExtendedMarkersView extends ViewPart
 			}
 		}
 		viewer.setSelection(new TreeSelection(selections.toArray(new TreePath[0])));
+	}
+
+	@Override
+	public boolean useCustomSearchContributions() {
+		return true;
+	}
+
+	@Override
+	public List<SearchContribution> getSearchContributions() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
